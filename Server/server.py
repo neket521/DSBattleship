@@ -14,14 +14,13 @@ class Player:
 
 def on_request(ch, method, props, body):
     request = str(body)
-
-    #response =
-
+    response = len(request)
+    print("on_request")
     ch.basic_publish(exchange='',
                      routing_key=props.reply_to,
                      properties=pika.BasicProperties(correlation_id = \
                                                          props.correlation_id,
-                                                     delivery_mode=2,),
+                                                     ),
                      body=str(response))
     ch.basic_ack(delivery_tag = method.delivery_tag)
 

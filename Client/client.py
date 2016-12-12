@@ -17,6 +17,7 @@ class Client:
 
     def call(self, n):
         self.response = None
+        self.corr_id = str(uuid.uuid4())
         self.channel.basic_publish(exchange='',
                                    routing_key='rpc_queue',
                                    properties=pika.BasicProperties(
@@ -26,6 +27,13 @@ class Client:
                                    body=str(n))
         while self.response is None:
             self.connection.process_data_events()
+
         return self.response
 
+    def is_connected(self):
+        connect_request = "connect"
+        connect_responce = self.call(connect_request)
+        return connect_responce
+
 client = Client("127.0.0.1")
+print client.is_connected()
