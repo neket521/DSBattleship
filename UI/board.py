@@ -92,7 +92,7 @@ class Board():
                 if self.list[i][j] != 0:
                     sys.stdout.write(" " + str(self.list[i][j])+ " ")
                 else:
-                    sys.stdout.write(" _ ")
+                    sys.stdout.write(" 0 ")
             print
 
     def place_available(self,size,x,y,d):
