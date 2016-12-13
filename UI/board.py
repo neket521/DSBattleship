@@ -25,9 +25,13 @@ class Board():
                 self.size = 11
                 self.list = [[0 for x in range(self.size)] for x in range(self.size)]
                 for e in ships:
-                    x = raw_input('Enter ' + str(e) + ' sized ship x coordinate ')
-                    y = raw_input('Enter ' + str(e) + ' sized ship y coordinate ')
-                    d = raw_input('Enter ' + str(e) + ' sized ship direction(0 = vertical,1 = horisontal) ')
+                    while 1:
+                        x = raw_input('Enter ' + str(e) + ' sized ship x coordinate ')
+                        y = raw_input('Enter ' + str(e) + ' sized ship y coordinate ')
+                        d = raw_input('Enter ' + str(e) + ' sized ship direction(0 = vertical,1 = horisontal) ')
+                        if x != '' and y != '' and d != '':
+                            if 0 <= int(x) <= 9 and  0 <= int(y) <= 9 and 0 <= int(d) <= 1:
+                                break
                     self.size = 11
                     self.place_manually(e,int(y),int(x),int(d))
                     #print self.list
@@ -50,9 +54,13 @@ class Board():
                     y += 1
         else:
             print "Not available place"
-            x = raw_input('Enter ' + str(ship) + ' sized ship x coordinate ')
-            y = raw_input('Enter ' + str(ship) + ' sized ship y coordinate ')
-            d = raw_input('Enter ' + str(ship) + ' sized ship direction(0 = vertical,1 = horisontal) ')
+            while 1:
+                x = raw_input('Enter ' + str(ship) + ' sized ship x coordinate ')
+                y = raw_input('Enter ' + str(ship) + ' sized ship y coordinate ')
+                d = raw_input('Enter ' + str(ship) + ' sized ship direction(0 = vertical,1 = horisontal) ')
+                if x != '' and y != '' and d != '':
+                            if 0 <= int(x) <= 9 and  0 <= int(y) <= 9 and 0 <= int(d) <= 1:
+                                break
             self.place_manually(ship,int(y),int(x),int(d))
 
     def add_ship(self,ship,x,y,d):
