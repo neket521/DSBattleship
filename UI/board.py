@@ -25,15 +25,16 @@ class Board():
                 self.size = 11
                 self.list = [[0 for x in range(self.size)] for x in range(self.size)]
                 for e in ships:
+                    letters = 'ABCDEFGHIJ'
                     while 1:
-                        x = raw_input('Enter ' + str(e) + ' sized ship x coordinate ')
-                        y = raw_input('Enter ' + str(e) + ' sized ship y coordinate ')
+                        x = raw_input('Enter ' + str(e) + ' sized ship coordinates: letter and number(for example A1) ')
                         d = raw_input('Enter ' + str(e) + ' sized ship direction(0 = vertical,1 = horisontal) ')
-                        if x != '' and y != '' and d != '':
-                            if 0 <= int(x) <= 9 and  0 <= int(y) <= 9 and 0 <= int(d) <= 1:
+                        if x != '' and d != '':
+                            if x[0].lower() in letters.lower() and 0 <= int(d) <= 1:
                                 break
                     self.size = 11
-                    self.place_manually(e,int(y),int(x),int(d))
+                    y = letters.lower().index(x[0].lower())
+                    self.place_manually(e,int(x[1])-1,y,int(d))
                     #print self.list
                     self.size = 10
                     self.print_board()
@@ -80,7 +81,12 @@ class Board():
             self.add_ship(ship,x,y,d)
 
     def print_board(self):
+        print "    A  B  C  D  E  F  G  H  I  J"
         for i in range(self.size):
+            if i == 9:
+                sys.stdout.write(" " + str(i+1))
+            else:
+                sys.stdout.write(" " + str(i+1) + ' ')
             for j in range(self.size):
                 if self.list[i][j] != 0:
                     sys.stdout.write(" " + str(self.list[i][j])+ " ")
