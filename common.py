@@ -1,0 +1,2 @@
+REQ_CONNECT = 1
+REQ_EXIT = 0
