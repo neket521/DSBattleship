@@ -42,6 +42,7 @@ class Board():
                 map(lambda x: x.pop(), self.list).pop()
                 print
                 break
+
     def place_manually(self,ship,x,y,d):
         if self.place_available(ship, x, y, d):
             if d == 0:
@@ -58,7 +59,7 @@ class Board():
             while 1:
                 x = raw_input('Enter ' + str(ship) + ' sized ship x coordinate ')
                 y = raw_input('Enter ' + str(ship) + ' sized ship y coordinate ')
-                d = raw_input('Enter ' + str(ship) + ' sized ship direction(0 = vertical,1 = horisontal) ')
+                d = raw_input('Enter ' + str(ship) + ' sized ship direction(0 = vertical,1 = horizontal) ')
                 if x != '' and y != '' and d != '':
                             if 0 <= int(x) <= 9 and  0 <= int(y) <= 9 and 0 <= int(d) <= 1:
                                 break
