@@ -27,22 +27,42 @@ class Board():
             if answer == 'm':
                 self.list = [[0 for x in range(self.size)] for x in range(self.size)]
                 self.print_board()
+                self.old_list = [row[:] for row in self.list]
                 for ship in ships:
-                    self.ask_coordinates_and_place_ship(ship)
-                    self.print_board()
+                    self.manual_helper(ship)
                 map(lambda x: x.pop(), self.list).pop()
                 return
+
+    def manual_helper(self, ship):
+        self.ask_coordinates_and_place_ship(ship)
+        self.print_board()
+        while 1:
+            x = raw_input("Confirm (c) or reposition the last ship (r):\n")
+            if x == 'c':
+                self.old_list = [row[:] for row in self.list]
+                break
+            if x == 'r':
+                self.list = [row[:] for row in self.old_list]
+                self.print_board()
+                self.manual_helper(ship)
+                break
 
     def ask_coordinates_and_place_ship(self, ship):
         letters = 'ABCDEFGHIJ'
         while 1:
-            x = raw_input('Enter ' + str(ship) + ' sized ship coordinates: letter and number(for example A1):\n')
-            d = raw_input('Enter ' + str(ship) + ' sized ship direction(0 = vertical,1 = horizontal):\n')
-            if x != '' and d != '':
-                if x[0].lower() in letters.lower() and 0 <= int(d) <= 1:
-                    break
-        y = letters.lower().index(x[0].lower())
-        self.place_manually(ship, int(x[1]) - 1, y, int(d))
+            x = raw_input('Enter ' + str(ship) + ' sized ship coordinates and direction(0 = vertical,1 = horizontal)(for example A50 ):\n')
+            if x != '' and len(x)== 3 or len(x)==4:
+                if len(x)== 3:
+                    if x[0].lower() in letters.lower() and 1 <= int(x[1]) <= 10 and 0 <= int(x[2]) <= 1:
+                        y = letters.lower().index(x[0].lower())
+                        self.place_manually(ship, int(x[1]) - 1, y, int(x[2]))
+                        break
+                if len(x)== 4:
+                    if x[0].lower() in letters.lower() and 1 <= int(x[1]+x[2]) <= 10 and 0 <= int(x[3]) <= 1:
+                        y = letters.lower().index(x[0].lower())
+                        self.place_manually(ship, int(x[1]+x[2]) - 1, y, int(x[3]))
+                        break
+
 
     def place_manually(self,ship,x,y,d):
         if self.place_available(ship, x, y, d):
