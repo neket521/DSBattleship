@@ -39,7 +39,7 @@ class Client:
         self.response = None
         self.corr_id = str(uuid.uuid4())
         self.channel.basic_publish(exchange='',
-                                   routing_key='rpc_queue_durable',
+                                   routing_key='rpc_queue',
                                    properties=pika.BasicProperties(
                                        reply_to=self.callback_queue,
                                        correlation_id=self.corr_id,
@@ -70,7 +70,6 @@ class Client:
 
     def loop(self):
         try:
-            print 'Falling to loop...'
             while 1:
                 if Client.status == STATUS_LOGIN_FAIL:
                     self.start_game()

@@ -8,6 +8,7 @@ channel = connection.channel()
 channel.queue_declare(queue='rpc_queue')
 
 connected_players = []
+active_games = []
 
 class Player:
 
@@ -17,6 +18,20 @@ class Player:
 
     def get_login(self):
         return self.login
+
+class Game:
+
+    def __init__(self, host):
+        self.host = host
+        self.players = []
+
+    def join(self, player):
+        self.players.append(player)
+
+    def leave(self, player):
+        for i in range(len(self.players)):
+            if self.players[i].get_login() == player.get_login():
+                self.players.pop(i)
 
 def prepare_list_of_active_games():
     return '0. Host your game\n1. bob\'s game'
@@ -41,8 +56,10 @@ def prepare_response(reqCode, request):
         try:
             selected_game = int(request)
             if selected_game == 0:
+                #new game should be created here
                 msg = 'You have hosted the game'
             else:
+                #select a game to join by number
                 msg = 'You have joined the game'
         except:
             return str(STATUS_CONNECTED)+':'+'Wrong value is entered'
@@ -61,7 +78,7 @@ def on_request(ch, method, props, body):
     ch.basic_ack(delivery_tag = method.delivery_tag)
 
 channel.basic_qos(prefetch_count=1)
-channel.basic_consume(on_request, queue='rpc_queue_durable')
+channel.basic_consume(on_request, queue='rpc_queue')
 
 print(" [x] Awaiting RPC requests")
 channel.start_consuming()
