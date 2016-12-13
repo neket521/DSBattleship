@@ -12,8 +12,8 @@ class Board():
     def add_ships(self):
         ships = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
         types = ["Carrier: 4", "Battleship: 3", "Cruiser: 2", "Submarine: 1"]
+        print self.info
         while 1:
-            print self.info
             answer = raw_input("Do you want to place ships manually(m), or allow AI(a) to place them randomly?\n")
             if answer == 'a':
                 self.list = [[0 for x in range(self.size)] for x in range(self.size)]
@@ -23,7 +23,7 @@ class Board():
                     d = random.randint(0, 1)
                     self.add_ship(e,x,y,d)
                 map(lambda x: x.pop(), self.list).pop()
-                break
+                return
             if answer == 'm':
                 self.list = [[0 for x in range(self.size)] for x in range(self.size)]
                 self.print_board()
@@ -31,7 +31,7 @@ class Board():
                     self.ask_coordinates_and_place_ship(ship)
                     self.print_board()
                 map(lambda x: x.pop(), self.list).pop()
-                break
+                return
 
     def ask_coordinates_and_place_ship(self, ship):
         letters = 'ABCDEFGHIJ'
@@ -103,8 +103,7 @@ class Board():
         except:
             return False
 
-board = Board()
-board.add_ships()
-board.print_board()
+    def get_positioned_ships(self):
+        return self.list
 
 

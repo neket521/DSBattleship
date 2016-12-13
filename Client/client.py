@@ -1,9 +1,11 @@
 import uuid
 import pika
-from common import STATUS_CONNECTED, STATUS_EXIT, STATUS_LOGIN_FAIL, STATUS_CHOOSE_GAME, STATUS_GAME_SELECTED
+from UI.board import Board
+from common import STATUS_CONNECTED, STATUS_EXIT, STATUS_LOGIN_FAIL, STATUS_CHOOSE_GAME, STATUS_GAME_SELECTED, \
+    STATUS_POSITION_SHIPS, STATUS_USER_READY, MSG_SEP
+
 
 class Client:
-
     ___NAME = 'Battleship Game'
     ___VER = '0.1'
     ___BUILT = '2016-12-13'
@@ -14,7 +16,8 @@ class Client:
     status = -1
 
     def info(self):
-        return '%s version %s (%s) %s\n%s' % (Client.___NAME, Client.___VER, Client.___BUILT, Client.___VENDOR, Client.___EXIT_COMMAND)
+        return '%s version %s (%s) %s\n%s' % (
+        Client.___NAME, Client.___VER, Client.___BUILT, Client.___VENDOR, Client.___EXIT_COMMAND)
 
     def __init__(self, server):
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=server))
@@ -32,8 +35,8 @@ class Client:
 
     def on_response(self, ch, method, props, body):
         if self.corr_id == props.correlation_id:
-            Client.status = int(body.split(':')[0])
-            self.response = body.split(':')[1]
+            Client.status = int(body.split(MSG_SEP)[0])
+            self.response = body.split(MSG_SEP)[1]
 
     def call(self, reqCode, body='empty_body'):
         self.response = None
@@ -44,7 +47,7 @@ class Client:
                                        reply_to=self.callback_queue,
                                        correlation_id=self.corr_id,
                                    ),
-                                   body=str(reqCode) + ':' + body)
+                                   body=str(reqCode) + MSG_SEP + body)
         while self.response is None:
             self.connection.process_data_events()
         return self.response
@@ -64,9 +67,13 @@ class Client:
         request_code = STATUS_CHOOSE_GAME
         return self.call(request_code)
 
-    def select_game(self, n):
+    def select_game(self, body):
         request_code = STATUS_GAME_SELECTED
-        return self.call(request_code, n)
+        return self.call(request_code, body)
+
+    def notify_user_is_ready(self, body):
+        request_code = STATUS_USER_READY
+        return self.call(request_code, body)
 
     def loop(self):
         try:
@@ -78,8 +85,14 @@ class Client:
                     print 'Choose a game to join from the list below:'
                     print client.get_list_of_active_games()
                     selected_game = raw_input('Type the number and press Enter:\n')
-                    print self.select_game(selected_game)
+                    print self.select_game(selected_game + MSG_SEP + Client.login)
                     continue
+                if Client.status == STATUS_POSITION_SHIPS:
+                    b = Board()
+                    b.add_ships()
+                    b.print_board()
+                    print 'ships positioned, need to notify other players that i am ready'
+                    # self.notify_user_is_ready(b.get_positioned_ships() + MSG_SEP + Client.login)
                 if Client.status == STATUS_EXIT:
                     print 'You have been kicked'
                     break
@@ -88,6 +101,7 @@ class Client:
                     break
         except KeyboardInterrupt:
             print self.exit_game(Client.login)
+
 
 client = Client("127.0.0.1")
 print client.info()
