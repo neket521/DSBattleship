@@ -92,6 +92,7 @@ class Client:
                     b.add_ships()
                     b.print_board()
                     print 'ships positioned, need to notify other players that i am ready'
+                    #need to send an array with coordinates of ships to server as a string
                     # self.notify_user_is_ready(b.get_positioned_ships() + MSG_SEP + Client.login)
                 if Client.status == STATUS_EXIT:
                     print 'You have been kicked'

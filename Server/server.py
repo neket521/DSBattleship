@@ -43,14 +43,15 @@ class Game:
             if self.__players[i].get_login() == player.get_login():
                 self.__players.pop(i)
 
+    def get_players(self):
+        return self.__players
+
 
 def prepare_list_of_active_games():
     i = 0
     result = str(i) + '. Host your game\n'
     for j in range(len(active_games)):
         i += 1
-        print type(active_games[j])
-        print type(active_games[j].get_host().get_login())
         result += str(i) + '. ' + active_games[j].get_host().get_login() + '\'s game\n'
     return result
 
@@ -64,7 +65,6 @@ def prepare_response(body):
             if request == connected_players[i].get_login():
                 return str(STATUS_LOGIN_FAIL) + MSG_SEP + 'This login already in use, try another one'
         connected_players.append(Player(request))
-        # check if there are available games
         return str(STATUS_CONNECTED) + MSG_SEP + 'Connected as ' + request
     elif reqCode == STATUS_EXIT:
         # player should also be removed from the game
@@ -80,7 +80,6 @@ def prepare_response(body):
         login = body.split(MSG_SEP)[2]
         player = None
         for i in range(len(connected_players)):
-            print 'Currently connected: ' + connected_players[i].get_login() + ', ' + login
             if login == connected_players[i].get_login():
                 player = connected_players[i]
         try:
@@ -93,7 +92,8 @@ def prepare_response(body):
             else:
                 # select a game to join by number (client entered numbers are shifted to the right,
                 # as number 0 is 'host own game')
-                active_games[selected_game - 1].join_game(player)
+                game_to_join = active_games[selected_game - 1]
+                game_to_join.join_game(player)
                 msg = 'You have joined the game'
         except:
             return str(STATUS_CONNECTED) + MSG_SEP + 'Wrong value is entered'
