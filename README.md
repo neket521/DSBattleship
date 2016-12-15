@@ -2,12 +2,12 @@
 Rules to be described (deathmatch, how many ships of what size). Detailed rules explained by the link (link to wikipedia).
 
 ## Prerequisites
-* Pika
+### Pika
 To install Pika simply use:
 ```
 pip install pika
 ```
-* RabbitMQ
+### RabbitMQ
 To install RabbitMQ go to the [download page](https://www.rabbitmq.com/download.html) and choose a suitable for your OS version.
 
 On Ubuntu you might want to also install RabbitMQ Management Console:
