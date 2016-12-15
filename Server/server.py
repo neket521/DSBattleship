@@ -85,7 +85,6 @@ def prepare_response(body):
         try:
             selected_game = int(request)
             if selected_game == 0:
-                # new game should be created here
                 newGame = Game(player)
                 active_games.append(newGame)
                 msg = 'You have created a new game'
@@ -94,6 +93,7 @@ def prepare_response(body):
                 # as number 0 is 'host own game')
                 game_to_join = active_games[selected_game - 1]
                 game_to_join.join_game(player)
+                #should notify the host and other players about new joining players
                 msg = 'You have joined the game'
         except:
             return str(STATUS_CONNECTED) + MSG_SEP + 'Wrong value is entered'
