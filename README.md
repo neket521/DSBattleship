@@ -1,5 +1,6 @@
 # DSBattleship
-Traditional rules are explained here: [link](https://en.wikipedia.org/wiki/Battleship_%28game%29). In our implementation, we will not limit the game to 2 players, but the multi-player option will be introduced (at least 3 players). We just assume that all the war-parties are fighting each other (aka “Deathmatch”). The winner is the last one standing on the sea battlefield. Optionally, we can score each successful hit.
+Traditional rules are explained here: [link](https://en.wikipedia.org/wiki/Battleship_%28game%29). In our implementation, we will not limit the game to 2 players, but the multi-player option will be introduced (at least 3 players). We just assume that all the war-parties are fighting each other (aka "Deathmatch"). The winner is the last one standing on the sea battlefield. Optionally, we can score each successful hit.
+
 Ships:
 * Carrier of size 4     x1
 * Battleship of size 3  x2
