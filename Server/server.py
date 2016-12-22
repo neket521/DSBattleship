@@ -1,6 +1,9 @@
 import pika
+import sys
+import time
+import threading
 from common import STATUS_CONNECTED, STATUS_EXIT, STATUS_LOGIN_FAIL, STATUS_CHOOSE_GAME, STATUS_GAME_SELECTED, \
-    STATUS_POSITION_SHIPS, MSG_SEP
+    STATUS_POSITION_SHIPS, MSG_SEP, STATUS_USER_READY, NOTIFY
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(
     host='127.0.0.1', port=5672))
@@ -9,6 +12,14 @@ channel.queue_declare(queue='rpc_queue')
 
 connected_players = []
 active_games = []
+channel.exchange_declare(exchange='logs',
+                         type='fanout')
+
+def send_toall(message):
+    channel.basic_publish(exchange='logs',
+                      routing_key='',
+                      body=str(NOTIFY) + message)
+    print(" [x] Sent %r" % message)
 
 
 class Player:
@@ -98,6 +109,11 @@ def prepare_response(body):
         except:
             return str(STATUS_CONNECTED) + MSG_SEP + 'Wrong value is entered'
         return str(STATUS_POSITION_SHIPS) + MSG_SEP + msg
+    elif reqCode == STATUS_USER_READY:
+        #print body
+        login = body.split(MSG_SEP)[2]
+        send_toall(login)
+        return str(STATUS_POSITION_SHIPS) + MSG_SEP
     else:
         return None
 
@@ -106,7 +122,7 @@ def on_request(ch, method, props, body):
     response = prepare_response(body)
     ch.basic_publish(exchange='',
                      routing_key=props.reply_to,
-                     properties=pika.BasicProperties(correlation_id=props.correlation_id, ),
+                     properties=pika.BasicProperties(correlation_id=props.correlation_id, delivery_mode=2,),
                      body=response)
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
