@@ -12,11 +12,11 @@ channel.queue_declare(queue='rpc_queue')
 
 connected_players = []
 active_games = []
-channel.exchange_declare(exchange='logs',
+channel.exchange_declare(exchange='notifications',
                          type='fanout')
 
 def send_toall(message):
-    channel.basic_publish(exchange='logs',
+    channel.basic_publish(exchange='notifications',
                       routing_key='',
                       body=str(NOTIFY) + message)
     print(" [x] Sent %r" % message)

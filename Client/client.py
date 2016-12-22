@@ -27,13 +27,13 @@ class Client:
         result = self.channel.queue_declare(exclusive=True)
         self.callback_queue = result.method.queue
         self.channel.basic_consume(self.on_response, no_ack=True, queue=self.callback_queue)
-        self.channel.exchange_declare(exchange='logs',
+        self.channel.exchange_declare(exchange='notifications',
                          type='fanout')
 
 
         queue_name = result.method.queue
 
-        self.channel.queue_bind(exchange='logs',
+        self.channel.queue_bind(exchange='notifications',
                    queue=queue_name)
 
         def th1():
