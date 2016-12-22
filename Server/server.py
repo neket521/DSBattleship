@@ -1,9 +1,6 @@
 import pika
-import sys
-import time
-import threading
 from common import STATUS_CONNECTED, STATUS_EXIT, STATUS_LOGIN_FAIL, STATUS_CHOOSE_GAME, STATUS_GAME_SELECTED, \
-    STATUS_POSITION_SHIPS, MSG_SEP, STATUS_USER_READY, NOTIFY
+    STATUS_POSITION_SHIPS, MSG_SEP, STATUS_USER_READY, NOTIFY_READY, NOTIFY_JOINED
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(
     host='127.0.0.1', port=5672))
@@ -12,13 +9,13 @@ channel.queue_declare(queue='rpc_queue')
 
 connected_players = []
 active_games = []
-channel.exchange_declare(exchange='notifications',
-                         type='fanout')
+channel.exchange_declare(exchange='notifications', type='fanout')
 
-def send_toall(message):
+def send_toall(code, message):
+    body_to_send = str(code) + MSG_SEP + message
     channel.basic_publish(exchange='notifications',
                       routing_key='',
-                      body=str(NOTIFY) + message)
+                      body=body_to_send)
     print(" [x] Sent %r" % message)
 
 
@@ -105,14 +102,17 @@ def prepare_response(body):
                 game_to_join = active_games[selected_game - 1]
                 game_to_join.join_game(player)
                 #should notify the host and other players about new joining players
+                send_toall(NOTIFY_JOINED, player.get_login())
                 msg = 'You have joined the game'
         except:
             return str(STATUS_CONNECTED) + MSG_SEP + 'Wrong value is entered'
         return str(STATUS_POSITION_SHIPS) + MSG_SEP + msg
     elif reqCode == STATUS_USER_READY:
-        #print body
         login = body.split(MSG_SEP)[2]
-        send_toall(login)
+        send_toall(NOTIFY_READY, login)
+        #shouldn't start ship positioning from here
+        #after client is ready, he waits untill all the clients in the game are ready
+        #then the game starts
         return str(STATUS_POSITION_SHIPS) + MSG_SEP
     else:
         return None
@@ -125,7 +125,6 @@ def on_request(ch, method, props, body):
                      properties=pika.BasicProperties(correlation_id=props.correlation_id, delivery_mode=2,),
                      body=response)
     ch.basic_ack(delivery_tag=method.delivery_tag)
-
 
 channel.basic_qos(prefetch_count=1)
 channel.basic_consume(on_request, queue='rpc_queue')
