@@ -56,7 +56,7 @@ class Client:
 
     def on_response(self, ch, method, props, body):
         if int(body[0]) == NOTIFY:
-            print body
+            #print body
             print body[1:] + " is ready"
         else:
             if self.corr_id == props.correlation_id:

@@ -108,6 +108,30 @@ class Board():
                     sys.stdout.write(FIELD_EMPTY)
             print
 
+    def print_2_boards(self, list2):
+        print "    A  B  C  D  E  F  G  H  I  J            A  B  C  D  E  F  G  H  I  J  "
+        for i in range(self.size_to_print):
+            if i == 9:
+                sys.stdout.write(" " + str(i + 1))
+            else:
+                sys.stdout.write(" " + str(i + 1) + ' ')
+            for j in range(self.size_to_print):
+                if self.list[i][j] != 0:
+                    sys.stdout.write(FIELD_SHIP)
+                else:
+                    sys.stdout.write(FIELD_EMPTY)
+
+            if i == 9:
+                sys.stdout.write("        " + str(i + 1))
+            else:
+                sys.stdout.write("        " + str(i + 1) + " ")
+            for j in range(self.size_to_print):
+                if list2[i][j] != 0:
+                    sys.stdout.write(FIELD_SHIP)
+                else:
+                    sys.stdout.write(FIELD_EMPTY)
+            print
+
     def place_available(self, size, x, y, d):
         try:
             if d == 0:
@@ -126,3 +150,8 @@ class Board():
 
     def get_positioned_ships(self):
         return self.list
+
+#b = Board()
+#b.add_ships()
+#list2 = b.list
+#b.print_2_boards(list2)
