@@ -3,7 +3,8 @@ import pika
 import threading
 from UI.board import Board
 from common import STATUS_CONNECTED, STATUS_EXIT, STATUS_LOGIN_FAIL, STATUS_CHOOSE_GAME, STATUS_GAME_SELECTED, \
-    STATUS_POSITION_SHIPS, STATUS_USER_READY, MSG_SEP, NOTIFY_READY, NOTIFY_JOINED
+    STATUS_POSITION_SHIPS, STATUS_USER_READY, MSG_SEP, NOTIFY_READY, NOTIFY_JOINED, NOTIFY_ASK_START, GAME_STARTED, \
+    NOTIFY_HIT
 
 
 class Client:
@@ -15,7 +16,7 @@ class Client:
 
     login = None
     status = -1
-
+    s_p = 0
     def info(self):
         return '%s version %s (%s) %s\n%s' % (
         Client.___NAME, Client.___VER, Client.___BUILT, Client.___VENDOR, Client.___EXIT_COMMAND)
@@ -45,6 +46,19 @@ class Client:
             # remember login to use it, when disconnecting
             Client.login = login
 
+    def ask_start(self):
+        r = ""
+        while 1:
+            resp = raw_input('Do you want to start the game(s), or wait for more players?(w):\n')
+            r = resp.lower()
+            if r == "s" or r == "w":
+                break
+
+        if r == "s":
+            request_code = GAME_STARTED
+            self.call(request_code, self.login)
+
+
     def on_response(self, ch, method, props, body):
         code = int(body.split(MSG_SEP)[0])
         login = body.split(MSG_SEP)[1]
@@ -55,6 +69,8 @@ class Client:
                 print 'Player '+ login + " is ready"
         elif code == NOTIFY_JOINED and login != Client.login:
             print 'Player '+body.split(MSG_SEP)[1]+' has joined'
+        elif code == NOTIFY_ASK_START and login == Client.login:
+            self.ask_start()
         else:
             if self.corr_id == props.correlation_id:
                 Client.status = int(body.split(MSG_SEP)[0])
@@ -109,10 +125,11 @@ class Client:
                     selected_game = raw_input('Type the number and press Enter:\n')
                     print self.select_game(selected_game + MSG_SEP + Client.login)
                     continue
-                if Client.status == STATUS_POSITION_SHIPS:
+                if Client.status == STATUS_POSITION_SHIPS and self.s_p == 0:
                     b = Board()
                     b.add_ships()
                     b.print_board()
+                    self.s_p = 1
                     self.notify_user_is_ready(MSG_SEP + Client.login)
                 if Client.status == STATUS_EXIT:
                     print 'You have been kicked'

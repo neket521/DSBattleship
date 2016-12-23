@@ -1,6 +1,7 @@
 import pika
 from common import STATUS_CONNECTED, STATUS_EXIT, STATUS_LOGIN_FAIL, STATUS_CHOOSE_GAME, STATUS_GAME_SELECTED, \
-    STATUS_POSITION_SHIPS, MSG_SEP, STATUS_USER_READY, NOTIFY_READY, NOTIFY_JOINED
+    STATUS_POSITION_SHIPS, MSG_SEP, STATUS_USER_READY, NOTIFY_READY, NOTIFY_JOINED, NOTIFY_ASK_START, GAME_STARTED, \
+    NOTIFY_HIT
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(
     host='127.0.0.1', port=5672))
@@ -36,9 +37,13 @@ class Game:
     def __init__(self, host):
         self.__host = host
         self.__players = []
+        self.__players.append(host)
 
     def get_host(self):
         return self.__host
+
+    def get_player_count(self):
+        return len(self.__players)
 
     def change_host(self, host):
         self.__host = host
@@ -63,6 +68,11 @@ def prepare_list_of_active_games():
         result += str(i) + '. ' + active_games[j].get_host().get_login() + '\'s game\n'
     return result
 
+def get_game_by_host(host):
+    for j in range(len(active_games)):
+        if active_games[j].get_host().get_login() == host:
+            return active_games[j]
+
 
 def prepare_response(body):
     reqCode = int(body.split(MSG_SEP)[0])
@@ -84,6 +94,10 @@ def prepare_response(body):
         return str(STATUS_EXIT) + MSG_SEP + 'Exiting the game'
     elif reqCode == STATUS_CHOOSE_GAME:
         return str(STATUS_CHOOSE_GAME) + MSG_SEP + prepare_list_of_active_games()
+    elif reqCode == GAME_STARTED:
+        print("GAME STARTED")
+        #send_toall(NOTIFY_HIT , login)
+        return str(GAME_STARTED)
     elif reqCode == STATUS_GAME_SELECTED:
         login = body.split(MSG_SEP)[2]
         player = None
@@ -92,6 +106,7 @@ def prepare_response(body):
                 player = connected_players[i]
         try:
             selected_game = int(request)
+            #print selected_game
             if selected_game == 0:
                 newGame = Game(player)
                 active_games.append(newGame)
@@ -101,9 +116,14 @@ def prepare_response(body):
                 # as number 0 is 'host own game')
                 game_to_join = active_games[selected_game - 1]
                 game_to_join.join_game(player)
+
                 #should notify the host and other players about new joining players
                 send_toall(NOTIFY_JOINED, player.get_login())
                 msg = 'You have joined the game'
+
+                if game_to_join.get_player_count() >= 2:
+                    send_toall(NOTIFY_ASK_START, game_to_join.get_host().get_login())
+                    return str(STATUS_POSITION_SHIPS) + MSG_SEP + msg
         except:
             return str(STATUS_CONNECTED) + MSG_SEP + 'Wrong value is entered'
         return str(STATUS_POSITION_SHIPS) + MSG_SEP + msg
