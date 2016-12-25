@@ -3,6 +3,13 @@ from common import STATUS_CONNECTED, STATUS_EXIT, STATUS_LOGIN_FAIL, STATUS_CHOO
     STATUS_POSITION_SHIPS, MSG_SEP, STATUS_USER_READY, NOTIFY_READY, NOTIFY_JOINED, GAME_STARTED, STATUS_SHOOTING, \
     STATUS_WAITING, NOTIFY_ALL_READY
 
+# Constants -------------------------------------------------------------------
+___NAME = 'DSTextEditor Server'
+___VER = '0.1'
+___DESC = 'Collaborative Text Editor Server'
+___BUILT = '2016-12-24'
+___VENDOR = 'Copyright (c) Anton Prokopov, Nikita Kirienko'
+
 connection = pika.BlockingConnection(pika.ConnectionParameters(
     host='127.0.0.1', port=5672))
 channel = connection.channel()
