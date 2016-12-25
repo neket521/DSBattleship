@@ -132,6 +132,37 @@ class Board():
                     sys.stdout.write(FIELD_EMPTY)
             print
 
+    def print_n_boards(self, boards):
+        sys.stdout.write("            your board" + " "*30)
+        for i in range(len(boards)):
+            sys.stdout.write(boards.keys()[i] +"'s board" +  " "*27)
+        print
+        for i in range(len(boards)+1):
+            sys.stdout.write("    A  B  C  D  E  F  G  H  I  J        ")
+        print
+        for i in range(self.size_to_print):
+            if i == 9:
+                sys.stdout.write(" " + str(i + 1))
+            else:
+                sys.stdout.write(" " + str(i + 1) + ' ')
+            for j in range(self.size_to_print):
+                if self.list[i][j] != 0:
+                    sys.stdout.write(FIELD_SHIP)
+                else:
+                    sys.stdout.write(FIELD_EMPTY)
+
+            for k in range(len(boards)):
+                if i == 9:
+                    sys.stdout.write("        " + str(i + 1))
+                else:
+                    sys.stdout.write("        " + str(i + 1) + " ")
+                for j in range(self.size_to_print):
+                    if boards.values()[k][i][j] != 0:
+                        sys.stdout.write(FIELD_SHIP)
+                    else:
+                        sys.stdout.write(FIELD_EMPTY)
+            print
+
     def place_available(self, size, x, y, d):
         try:
             if d == 0:
@@ -153,5 +184,10 @@ class Board():
 
 #b = Board()
 #b.add_ships()
+#boards = {}
+#boards["user1"] = b.list
+#boards["user2"] = b.list
+#boards["user3"] = b.list
+#boards["user4"] = b.list
 #list2 = b.list
-#b.print_2_boards(list2)
+#b.print_n_boards(boards)
