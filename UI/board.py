@@ -7,6 +7,13 @@ class Board():
         self.size_to_print = 10
         self.size = 11
         self.info = 'Ships to position:\nCarrier of size 4 x1, Battleship of size 3 x2, Cruiser of size 2 x3, Submarine of size 1 x4'
+        self.__players = []
+
+    def set_opponents(self, players):
+        self.__players = players
+
+    def get_opponents_count(self):
+        return len(self.__players)
 
     def add_ships(self):
         ships = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
@@ -134,8 +141,8 @@ class Board():
 
     def print_n_boards(self, boards):
         sys.stdout.write("            your board" + " "*30)
-        for i in range(len(boards)):
-            sys.stdout.write(boards.keys()[i] +"'s board" +  " "*27)
+        for p in self.__players:
+            sys.stdout.write(p +"'s board" +  " "*27)
         print
         for i in range(len(boards)+1):
             sys.stdout.write("    A  B  C  D  E  F  G  H  I  J        ")
@@ -157,7 +164,7 @@ class Board():
                 else:
                     sys.stdout.write("        " + str(i + 1) + " ")
                 for j in range(self.size_to_print):
-                    if boards.values()[k][i][j] != 0:
+                    if boards[k][i][j] != 0:
                         sys.stdout.write(FIELD_SHIP)
                     else:
                         sys.stdout.write(FIELD_EMPTY)
@@ -181,13 +188,3 @@ class Board():
 
     def get_positioned_ships(self):
         return self.list
-
-#b = Board()
-#b.add_ships()
-#boards = {}
-#boards["user1"] = b.list
-#boards["user2"] = b.list
-#boards["user3"] = b.list
-#boards["user4"] = b.list
-#list2 = b.list
-#b.print_n_boards(boards)

@@ -1,7 +1,7 @@
 import pika
 from common import STATUS_CONNECTED, STATUS_EXIT, STATUS_LOGIN_FAIL, STATUS_CHOOSE_GAME, STATUS_GAME_SELECTED, \
-    STATUS_POSITION_SHIPS, MSG_SEP, STATUS_USER_READY, NOTIFY_READY, NOTIFY_JOINED, GAME_STARTED, STATUS_SHOOTING, \
-    STATUS_WAITING, NOTIFY_ALL_READY
+    STATUS_POSITION_SHIPS, MSG_SEP, STATUS_USER_READY, NOTIFY_READY, NOTIFY_JOINED, STATUS_SHOOTING, \
+    STATUS_WAITING, NOTIFY_ALL_READY, STATUS_SHOT_FIRED, NOTIFY_TURN_CHANGED
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(
     host='127.0.0.1', port=5672))
@@ -11,13 +11,6 @@ channel.queue_declare(queue='rpc_queue')
 connected_players = []
 active_games = []
 channel.exchange_declare(exchange='notifications', type='fanout')
-
-def send_toall(code, message):
-    body_to_send = str(code) + MSG_SEP + message
-    channel.basic_publish(exchange='notifications',
-                      routing_key='',
-                      body=body_to_send)
-
 
 class Player:
     def __init__(self, login):
@@ -40,6 +33,13 @@ class Game:
         self.__host = host
         self.__players = []
         self.__players.append(host)
+        self.__turn = 0
+
+    def change_turn(self):
+        self.__turn += 1
+        if self.__turn == len(self.__players):
+            self.__turn = 0
+        return self.__players[self.__turn].get_login()
 
     def get_host(self):
         return self.__host
@@ -81,6 +81,14 @@ def prepare_list_of_active_games():
     for j in range(len(active_games)):
         i += 1
         result += str(i) + '. ' + active_games[j].get_host().get_login() + '\'s game\n'
+    return result
+
+def prepare_list_of_players_in_game(game):
+    result = ''
+    for i in range(len(game.get_players())):
+        result += str(i+1) + ' - ' + game.get_players()[i].get_login()
+        if i != len(game.get_players()) - 1:
+            result += ','
     return result
 
 def get_game_by_host(login):
@@ -143,10 +151,21 @@ def prepare_response(body):
         send_toall(NOTIFY_READY, login)
         # if all users in this game are ready, start shooting
         if selected_game.all_players_ready():
-            send_toall(NOTIFY_ALL_READY, selected_game.get_players()[0].get_login())
+            send_toall(NOTIFY_ALL_READY, selected_game.get_players()[0] .get_login() + MSG_SEP + prepare_list_of_players_in_game(selected_game))
             return str(STATUS_SHOOTING) + MSG_SEP + selected_game.get_players()[0].get_login()
         else:
             return str(STATUS_WAITING) + MSG_SEP
+    elif reqCode == STATUS_SHOT_FIRED:
+        login = request
+        target = int(body.split(MSG_SEP)[2])
+        coord = body.split(MSG_SEP)[3]
+        selected_game = int(body.split(MSG_SEP)[4])-1
+        print login + ' attacked '+active_games[selected_game].get_players()[target-1].get_login()+' on '+coord
+        #should notify target about attacked coordinate
+        #from target should notify shooter, if he hit or missed
+        #from target should notify all, if ship was destroyed
+        send_toall(NOTIFY_TURN_CHANGED, active_games[selected_game].change_turn())
+        return str(STATUS_SHOT_FIRED) + MSG_SEP
     else:
         return str(STATUS_EXIT) + + MSG_SEP + 'Something went wrong. Exiting...'
 
@@ -158,6 +177,12 @@ def on_request(ch, method, props, body):
                      properties=pika.BasicProperties(correlation_id=props.correlation_id, delivery_mode=2,),
                      body=response)
     ch.basic_ack(delivery_tag=method.delivery_tag)
+
+def send_toall(code, message):
+    body_to_send = str(code) + MSG_SEP + message
+    channel.basic_publish(exchange='notifications',
+                      routing_key='',
+                      body=body_to_send)
 
 channel.basic_qos(prefetch_count=1)
 channel.basic_consume(on_request, queue='rpc_queue')

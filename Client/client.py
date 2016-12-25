@@ -3,8 +3,8 @@ import pika
 import threading
 from UI.board import Board
 from common import STATUS_CONNECTED, STATUS_EXIT, STATUS_LOGIN_FAIL, STATUS_CHOOSE_GAME, STATUS_GAME_SELECTED, \
-    STATUS_POSITION_SHIPS, STATUS_USER_READY, MSG_SEP, NOTIFY_READY, NOTIFY_JOINED, STATUS_SHOOTING, STATUS_WAITING, \
-    GAME_STARTED, NOTIFY_HIT, NOTIFY_ALL_READY
+    STATUS_POSITION_SHIPS, STATUS_USER_READY, MSG_SEP, NOTIFY_READY, NOTIFY_JOINED, STATUS_WAITING, \
+    NOTIFY_ALL_READY, STATUS_SHOT_FIRED, NOTIFY_TURN_CHANGED
 
 
 class Client:
@@ -58,13 +58,20 @@ class Client:
         elif code == NOTIFY_JOINED and self.login != Client.login:
             print 'Player '+body.split(MSG_SEP)[1]+' has joined'
         elif code == NOTIFY_ALL_READY:
-            if Client.login != self.login:
-                print 'It is ' + self.login + '\'s turn'
-                #just wait for a notification that it is your turn now
-            else:
+            players = body.split(MSG_SEP)[2]
+            self.redraw_boards(players.split(','))
+            if Client.login == self.login:
                 print 'Your turn. Shoot!'
-                point_to_attack = raw_input('Type player\'s number and a the coordinate you want to hit (example "1A5") and press Enter:\n')
-                print 'Attempt to attack: '+point_to_attack
+                self.shoot()
+            else:
+                print 'It is ' + self.login + '\'s turn'
+                # just wait for a notification that it is your turn now
+        elif code == NOTIFY_TURN_CHANGED:
+            if Client.login == self.login:
+                print 'Your turn. Shoot!'
+                self.shoot()
+            else:
+                print 'It is ' + self.login + '\'s turn'
         elif code == STATUS_WAITING:
             print 'Waiting for other players to position their ships'
         else:
@@ -97,6 +104,20 @@ class Client:
         else:
             return None
 
+    def redraw_boards(self, opponents):
+        boards_to_draw = []
+        for opponent in opponents:
+            if opponent.split(' - ')[1]==Client.login:
+                opponents.remove(opponent)
+                break
+        print opponents
+        for i in range(len(opponents)):
+            opponents[i] = opponents[i]
+            b = [[0 for x in range(11)] for y in range(11)]
+            boards_to_draw.append(b)
+        self.board.set_opponents(opponents)
+        self.board.print_n_boards(boards_to_draw)
+
     def get_list_of_active_games(self):
         request_code = STATUS_CHOOSE_GAME
         return self.call(request_code)
@@ -108,6 +129,18 @@ class Client:
     def notify_user_is_ready(self, body):
         request_code = STATUS_USER_READY
         return self.call(request_code, body)
+
+    def shoot(self):
+        while 1:
+            x = raw_input(
+                'Type a player\'s number and a coordinate you want to hit (example "1,A5") and press Enter:\n')
+            if 0 < int(x.split(',')[0]) <= self.board.get_opponents_count()+1 \
+                and x.split(',')[1][0].lower() in 'abcdefghij' \
+                and 0 <= int(x.split(',')[1][1:]) <= 10:
+                print 'Attempt to attack: ' + x
+                request_code = STATUS_SHOT_FIRED
+                # shooting_user:target_user_index:coordinates
+                return self.call(request_code, Client.login + MSG_SEP + x.split(',')[0] + MSG_SEP + x.split(',')[1] + MSG_SEP + str(self.selected_game))
 
     def loop(self):
         try:
@@ -122,9 +155,9 @@ class Client:
                     print self.select_game(Client.selected_game + MSG_SEP + Client.login)
                     continue
                 if Client.status == STATUS_POSITION_SHIPS:
-                    b = Board()
-                    b.add_ships()
-                    b.print_board()
+                    self.board = Board()
+                    self.board.add_ships()
+                    self.board.print_board()
                     self.notify_user_is_ready(Client.selected_game + MSG_SEP + Client.login)
                 if Client.status == STATUS_EXIT:
                     print 'You have been kicked'
