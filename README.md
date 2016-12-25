@@ -7,6 +7,9 @@ Ships:
 * Cruiser of size 2     x3
 * Submarine of size 1   x4
 
+# Running the game
+To run the game first run the server by running the file manage_server.py and then run manage_client.py for every client.
+
 ## Prerequisites
 ### Pika
 To install Pika simply use:
