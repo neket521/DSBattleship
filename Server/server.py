@@ -1,7 +1,7 @@
 import pika
 from common import STATUS_CONNECTED, STATUS_EXIT, STATUS_LOGIN_FAIL, STATUS_CHOOSE_GAME, STATUS_GAME_SELECTED, \
-    STATUS_POSITION_SHIPS, MSG_SEP, STATUS_USER_READY, NOTIFY_READY, NOTIFY_JOINED, NOTIFY_ASK_START, GAME_STARTED, \
-    NOTIFY_HIT
+    STATUS_POSITION_SHIPS, MSG_SEP, STATUS_USER_READY, NOTIFY_READY, NOTIFY_JOINED, GAME_STARTED, STATUS_SHOOTING, \
+    STATUS_WAITING, NOTIFY_ALL_READY
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(
     host='127.0.0.1', port=5672))
@@ -17,20 +17,22 @@ def send_toall(code, message):
     channel.basic_publish(exchange='notifications',
                       routing_key='',
                       body=body_to_send)
-    print(" [x] Sent %r" % message)
 
 
 class Player:
     def __init__(self, login):
         self.__login = str(login)
         self.__score = 0
-        self.__ships = []
+        self.__is_ready = False
 
     def get_login(self):
         return self.__login
 
-    def set_ships(self, ships):
-        self.__ships = ships
+    def set_player_ready(self, is_ready):
+        self.__is_ready = is_ready
+
+    def is_ready(self):
+        return self.__is_ready
 
 
 class Game:
@@ -59,6 +61,19 @@ class Game:
     def get_players(self):
         return self.__players
 
+    def set_is_ready(self, login, is_ready):
+        for i in range(len(self.__players)):
+            if self.__players[i].get_login() == login:
+                self.__players[i].set_player_ready(is_ready)
+
+    def all_players_ready(self):
+        if len(self.__players) < 2:
+            return False
+        for player in self.__players:
+            if not player.is_ready():
+                return False
+        return True
+
 
 def prepare_list_of_active_games():
     i = 0
@@ -68,16 +83,14 @@ def prepare_list_of_active_games():
         result += str(i) + '. ' + active_games[j].get_host().get_login() + '\'s game\n'
     return result
 
-def get_game_by_host(host):
+def get_game_by_host(login):
     for j in range(len(active_games)):
-        if active_games[j].get_host().get_login() == host:
+        if active_games[j].get_host().get_login() == login:
             return active_games[j]
-
 
 def prepare_response(body):
     reqCode = int(body.split(MSG_SEP)[0])
     request = body.split(MSG_SEP)[1]
-    # print str(reqCode)
     if reqCode == STATUS_CONNECTED:
         for i in range(len(connected_players)):
             if request == connected_players[i].get_login():
@@ -94,10 +107,6 @@ def prepare_response(body):
         return str(STATUS_EXIT) + MSG_SEP + 'Exiting the game'
     elif reqCode == STATUS_CHOOSE_GAME:
         return str(STATUS_CHOOSE_GAME) + MSG_SEP + prepare_list_of_active_games()
-    elif reqCode == GAME_STARTED:
-        print("GAME STARTED")
-        #send_toall(NOTIFY_HIT , login)
-        return str(GAME_STARTED)
     elif reqCode == STATUS_GAME_SELECTED:
         login = body.split(MSG_SEP)[2]
         player = None
@@ -106,7 +115,6 @@ def prepare_response(body):
                 player = connected_players[i]
         try:
             selected_game = int(request)
-            #print selected_game
             if selected_game == 0:
                 newGame = Game(player)
                 active_games.append(newGame)
@@ -115,27 +123,32 @@ def prepare_response(body):
                 # select a game to join by number (client entered numbers are shifted to the right,
                 # as number 0 is 'host own game')
                 game_to_join = active_games[selected_game - 1]
-                game_to_join.join_game(player)
-
-                #should notify the host and other players about new joining players
-                send_toall(NOTIFY_JOINED, player.get_login())
-                msg = 'You have joined the game'
-
-                if game_to_join.get_player_count() >= 2:
-                    send_toall(NOTIFY_ASK_START, game_to_join.get_host().get_login())
-                    return str(STATUS_POSITION_SHIPS) + MSG_SEP + msg
+                if game_to_join.all_players_ready():
+                    return str(STATUS_CONNECTED) + MSG_SEP + 'Cannot join. Game in progress'
+                else:
+                    game_to_join.join_game(player)
+                    send_toall(NOTIFY_JOINED, player.get_login())
+                    msg = 'You have joined the game'
         except:
             return str(STATUS_CONNECTED) + MSG_SEP + 'Wrong value is entered'
         return str(STATUS_POSITION_SHIPS) + MSG_SEP + msg
     elif reqCode == STATUS_USER_READY:
+        game_index = int(body.split(MSG_SEP)[1])
         login = body.split(MSG_SEP)[2]
+        if game_index == 0:
+            selected_game = get_game_by_host(login)
+        else:
+            selected_game = active_games[game_index - 1]
+        selected_game.set_is_ready(login, True)
         send_toall(NOTIFY_READY, login)
-        #shouldn't start ship positioning from here
-        #after client is ready, he waits untill all the clients in the game are ready
-        #then the game starts
-        return str(STATUS_POSITION_SHIPS) + MSG_SEP
+        # if all users in this game are ready, start shooting
+        if selected_game.all_players_ready():
+            send_toall(NOTIFY_ALL_READY, selected_game.get_players()[0].get_login())
+            return str(STATUS_SHOOTING) + MSG_SEP + selected_game.get_players()[0].get_login()
+        else:
+            return str(STATUS_WAITING) + MSG_SEP
     else:
-        return None
+        return str(STATUS_EXIT) + + MSG_SEP + 'Something went wrong. Exiting...'
 
 
 def on_request(ch, method, props, body):
